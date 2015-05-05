@@ -25,13 +25,14 @@ data Command    = While      Expr     [Command]
    deriving Show
 
 data Expr       = IntLit     Int
-                | BoolLit    String
+                | BoolLit    Bool
                 | StringLit  String
                 | Var        Nameid   [Expr]
                 | Not        Expr
                 | BinOp      Expr      String    Expr  -- Operador binário associativo à esquerda
                 | Func       Nameid   [Expr]
                 | Alloc      Typeid   [Expr]
+                | Tern       Expr      Expr      Expr
 
 instance Show Typeid where
     show Int = "Int"
@@ -46,6 +47,7 @@ instance Show Expr where
     show (BinOp a o b) = '(' : (show a) ++ o ++ (show b) ++ ")"
     show (Var n e) = n ++ (foldl (\a x->a ++ '[' : (show x) ++ "]") "" e)
     show (Not e) = "!(" ++ show e ++ ")"
-    show (Alloc t e) = "novo " ++ show t ++ (foldl (\a x->a ++ '[' : (show x) ++ "]") "" e)
+    show (Alloc t e) = "new " ++ show t ++ (foldl (\a x->a ++ '[' : (show x) ++ "]") "" e)
     show (Func n p) = n ++ '(' : (tail . init . show) p ++ ")"
+    show (Tern c t f) = '(' : show c ++ ")? (" ++ show t ++ "): (" ++ show f ++ ")"
 

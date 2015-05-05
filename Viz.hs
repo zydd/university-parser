@@ -37,7 +37,7 @@ vizls i (x:xs) p c = (l, i `label` p
 instance Viz Expr where
     vizs i (IntLit t) = (i+1,i `label` (show t))
 
-    vizs i (BoolLit t) = (i+1,i `label` t)
+    vizs i (BoolLit t) = (i+1,i `label` (show t))
 
     vizs i (StringLit t) = (i+1,i `label` ("\\\"" ++ t ++ "\\\""))
 
@@ -86,6 +86,16 @@ instance Viz Expr where
                            ++ i `arrow` (i+1)
                            ++ i `arrow` (i+2)
                            ++ idx)
+
+    vizs i (Tern t u v) = let (j,ex1) = vizs (i+1) t
+                              (k,ex2) = vizs j u
+                              (l,ex3) = vizs k u
+                           in (l, i `label` "?"
+                               ++ i `arrow` (i+1)
+                               ++ i `arrow` j
+                               ++ i `arrow` k
+                               ++ ex1 ++ ex2 ++ ex3
+                               ++ order [i+1,j,k])
 
 instance Viz Command where
     vizs i (Expr t) = vizs i t

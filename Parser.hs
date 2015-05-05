@@ -19,7 +19,7 @@ intlit :: Parser Expr
 intlit = IntLit <$> (read <$> many1 digit)
 
 boollit :: Parser Expr
-boollit = BoolLit <$> (word "Verdadeiro" <|> word "Falso")
+boollit = BoolLit <$> ((/="falso") <$> (try (word "verdade") <|> try (word "falso")))
 
 stringlit :: Parser Expr
 stringlit = StringLit <$> between (char '"') (char '"') (many $ noneOf "\"\0\n")
@@ -62,8 +62,14 @@ negation = Not <$> (char '!' *> spaces *> term)
 call :: Parser Expr
 call = Func <$> nameid <* spaces <*> between (char '(') (char ')') (expr `sepBy` (char ','))
 
+tern :: Parser Expr
+tern = Tern <$> between (char '(') (char ')') expr <* spaces <* char '?' <* spaces
+            <*> between (char '(') (char ')') expr <* spaces <* char ':' <* spaces
+            <*> between (char '(') (char ')') expr
+
 term :: Parser Expr
-term = between (char '(') (char ')') expr
+term = try tern
+   <|> between (char '(') (char ')') expr
    <|> stringlit
    <|> boollit
    <|> intlit
