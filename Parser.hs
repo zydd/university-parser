@@ -15,6 +15,9 @@ word w = string w <* notFollowedBy (alphaNum <|> char '_')
 oneOfStr :: [String] -> Parser String
 oneOfStr (x:xs) = foldl (<|>) (try $ string x) (map (try . string) xs)
 
+oneOfWord :: [String] -> Parser String
+oneOfWord (x:xs) = foldl (<|>) (try $ word x) (map (try . word) xs)
+
 intlit :: Parser Expr
 intlit = IntLit <$> (read <$> many1 digit)
 
@@ -25,12 +28,11 @@ stringlit :: Parser Expr
 stringlit = StringLit <$> between (char '"') (char '"') (many $ noneOf "\"\0\n")
 
 nameid :: Parser String
-nameid = do s <- (:) <$> (letter <|> char '_') <*> many (alphaNum <|> char '_')
-            if s `elem` ["se","entao","senao","enquanto","novo",
-                         "free","itere","verdade","falso","Bool",
-                         "String","Int","vars","programa"]
-               then parserFail "cannot use reserved word as identifier"
-               else return s
+nameid = oneOfWord ["se","entao","senao","enquanto","Int","vars","programa",
+                    "verdade","falso","Bool","String","itere","novo","free"]
+              *> parserFail "cannot use reserved word as identifier"
+     <|> (:) <$> (letter <|> char '_') <*> many (alphaNum <|> char '_')
+     <?> "identifier"
 
 typeid :: Parser Typeid
 typeid = typevec <$> typename <* spaces
@@ -47,7 +49,7 @@ expr = ( lbinop [">=",">","<=","<","!=","=="]  -- Menor precedência
        . lbinop ["&","|","^"]
        . lbinop ["+","-"]
        . lbinop ["*","/"]                      -- Maior precedência
-       ) $ (between spaces spaces term <?> "expression")
+       ) $ (between spaces spaces term)
 
 lbinop :: [String] -> Parser Expr -> Parser Expr
 lbinop ops unit = foldl (\e (a,b)->BinOp e a b) <$> unit
@@ -82,6 +84,7 @@ term = try tern
    <|> alloc
    <|> try call
    <|> var
+   <?> "expression"
 
 block :: Parser [Command]
 block = between (char '{') (char '}') (spaces *> many (command <* spaces))
