@@ -19,7 +19,7 @@ intlit :: Parser Expr
 intlit = IntLit <$> (read <$> many1 digit)
 
 boollit :: Parser Expr
-boollit = BoolLit <$> (read <$> (word "True" <|> word "False"))
+boollit = BoolLit <$> (word "Verdadeiro" <|> word "Falso")
 
 stringlit :: Parser Expr
 stringlit = StringLit <$> between (char '"') (char '"') (many $ noneOf "\"\0\n")
@@ -108,7 +108,7 @@ free = Free <$> (try (word "free") *> whitespace *> expr)
 
 for :: Parser Command
 for =  For <$> (try (word "itere") *> spaces
-            *> char '(' *> spaces *> (nameid <* spaces <* char ':' <* spaces) <* spaces)
+            *> char '(' *> spaces *> (var <* spaces <* char ':' <* spaces) <* spaces)
            <*> (expr <* string ".." <* spaces)
            <*> (expr <* char ')' <* spaces)
            <*> block

@@ -18,14 +18,14 @@ data VarDecl    = VarDecl    Typeid    Nameid   (Maybe Expr)        deriving Sho
 data Command    = While      Expr     [Command]
                 | If         Expr     [Command]
                 | IfElse     Expr     [Command] [Command]
-                | For        Nameid    Expr      Expr      [Command]
+                | For        Expr      Expr      Expr      [Command]
                 | Free       Expr
                 | Attrib     Expr      Expr
                 | Expr       Expr
    deriving Show
 
 data Expr       = IntLit     Int
-                | BoolLit    Bool
+                | BoolLit    String
                 | StringLit  String
                 | Var        Nameid   [Expr]
                 | Not        Expr

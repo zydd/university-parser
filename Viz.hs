@@ -7,131 +7,192 @@ class Viz a where
     viz a = let (_,g) = vizs 0 a in "digraph {\n" ++ g ++ "}\n"
     vizs :: Int -> a -> (Int,String)
 
-vizl i ([]) p = (i+1, show i ++ " [label=\""++ p ++"\"]\n")
+a `arrow` b = show a ++ " -> " ++ show b ++ "\n"
+a `iarrow` b = show a ++ " -> " ++ show b ++ " [style=invis]\n"
+a `label` b = show a ++ " [label=\"" ++ b ++ "\"]\n"
+
+rank (_:[]) = ""
+rank x = "{rank=same; " ++ foldr1 (++) (map ((++";") . show) x) ++ "}\n"
+
+order x = rank x ++ chain x
+    where chain (x:[]) = ""
+          chain (x:y:xs) = x `iarrow` y ++ order (y:xs)
+
+vizl i ([]) p = (i+1, i `label` p)
 vizl i xs p = vizls i xs p []
 
-vizls i (x:[]) p c = (k, show i ++ " [label=\""++ p ++"\"]\n"
-                      ++ show i ++ " -> " ++ show(i+1) ++ "\n"
-                      ++ "{rank=same; " ++ foldr1 (++) (map ((++";") . show) (i:c)) ++ "}\n"
+vizls i (x:[]) p c = (k, i `label` p
+                      ++ i `arrow` (i+1)
+                      ++ rank (i:c)
                       ++ ex)
     where (k,ex) = vizs (i+1) x
 
-vizls i (x:xs) p c = (l, show i ++ " [label=\""++ p ++"\"]\n"
-                      ++ show i ++ " -> " ++ show(i+1) ++ "\n"
-                      ++ show i ++ " -> " ++ show(k) ++ "\n"
+vizls i (x:xs) p c = (l, i `label` p
+                      ++ i `arrow` (i+1)
+                      ++ i `arrow` (k)
                       ++ ex ++ ex2)
     where (k,ex) = vizs (i+1) x
           (l,ex2) = vizls k xs p (i:c)
 
 instance Viz Expr where
-    vizs i (IntLit t) = (i+1, show i ++ " [label=\"Lit " ++ show t ++ "\"]\n")
-    vizs i (BoolLit t) = (i+1,show i ++ " [label=\"Lit " ++ show t ++ "\"]\n")
-    vizs i (StringLit t) = (i+1,show i ++ " [label=\"Lit \\\"" ++ t ++ "\\\"\"]\n")
-    vizs i (Not t) = (j, show i ++ " [label=\"!\"]\n"
-                      ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                      ++ rhs)
-        where (j,rhs) = vizs (i+1) t
-    vizs i (BinOp t o u) = (k, show i ++ " [label=" ++ show o ++ "]\n"
-                            ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                            ++ show i ++ " -> " ++ show j ++ "\n"
-                            ++ lhs ++ rhs)
-        where (j,lhs) = vizs (i+1) t
-              (k,rhs) = vizs j u
-    vizs i (Var t []) = (i+1, show i ++ " [label=\"Var " ++ t ++ "\"]\n")
-    vizs i (Var t u) = (j, show i ++ " [label=\"Var " ++ t ++ "\"]\n"
-                        ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                        ++ idx)
-        where (j,idx) = vizl (i+1) u "[]"
-    vizs i (Func t []) = (i+1, show i ++ " [label=\"Func " ++ t ++ "\"]\n")
-    vizs i (Func t u) = (j, show i ++ " [label=\"Func " ++ t ++ "\"]\n"
-                         ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                         ++ idx)
-        where (j,idx) = vizl (i+1) u "()"
-    vizs i (Alloc t []) = (i+1, show i ++ " [label=\"new " ++ show t ++ "\"]\n")
-    vizs i (Alloc t u) = (j, show i ++ " [label=\"new " ++ show t ++ "\"]\n"
-                          ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                          ++ idx)
-        where (j,idx) = vizl (i+1) u "[]"
+    vizs i (IntLit t) = (i+1,i `label` (show t))
+
+    vizs i (BoolLit t) = (i+1,i `label` t)
+
+    vizs i (StringLit t) = (i+1,i `label` ("\\\"" ++ t ++ "\\\""))
+
+    vizs i (Not t) = let (j,rhs) = vizs (i+1) t
+                      in (j, i `label` ("!")
+                          ++ i `arrow` (i+1)
+                          ++ rhs)
+
+    vizs i (BinOp t o u) = let (j,lhs) = vizs (i+1) t
+                               (k,rhs) = vizs j u
+                           in (k, i `label` (o)
+                               ++ i `arrow` (i+1)
+                               ++ i `arrow` j
+                               ++ lhs ++ rhs)
+
+    vizs i (Var t []) = (i+2,i `label` "Var"
+                          ++ (i+1) `label` t
+                          ++ i `arrow` (i+1))
+
+    vizs i (Var t u) = let (j,idx) = vizl (i+2) u "[]"
+                        in (j, i `label` "Var"
+                            ++ (i+1) `label` t
+                            ++ i `arrow` (i+1)
+                            ++ i `arrow` (i+2)
+                            ++ idx)
+
+    vizs i (Func t []) = (i+2, i `label` "Func"
+                            ++ (i+1) `label` t
+                            ++ i `arrow` (i+1))
+
+    vizs i (Func t u) = let (j,idx) = vizl (i+2) u "()"
+                        in (j, i `label` "Func"
+                            ++ (i+1) `label` t
+                            ++ i `arrow` (i+1)
+                            ++ i `arrow` (i+2)
+                            ++ idx
+                            ++ order [i+1,i+2])
+
+    vizs i (Alloc t []) = (i+2, i `label` "new"
+                             ++ (i+1) `label` (show t)
+                             ++ i `arrow` (i+1))
+
+    vizs i (Alloc t u) = let (j,idx) = vizl (i+2) u "[]"
+                          in (j, i `label` "new"
+                           ++ (i+1) `label` (show t)
+                           ++ i `arrow` (i+1)
+                           ++ i `arrow` (i+2)
+                           ++ idx)
 
 instance Viz Command where
     vizs i (Expr t) = vizs i t
-    vizs i (Attrib t u) = (k, show i ++ " [label=\"Attrib\"]\n"
-                           ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                           ++ show i ++ " -> " ++ show j ++ "\n"
-                           ++ lhs ++ rhs)
-        where (j,lhs) = vizs (i+1) t
-              (k,rhs) = vizs j u
-    vizs i (Free t) = (j, show i ++ " [label=\"free\"]\n"
-                       ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                       ++ rhs)
-        where (j,rhs) = vizs (i+1) t
-    vizs i (While t u) = (k, show i ++ " [label=\"while\"]\n"
-                          ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                          ++ show i ++ " -> " ++ show j ++ "\n"
-                          ++ ex ++ cmd)
-        where (j,ex) = vizs (i+1) t
-              (k,cmd) = vizl j u ";"
-    vizs i (If t u) = (k, show i ++ " [label=\"if\"]\n"
-                       ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                       ++ show i ++ " -> " ++ show j ++ "\n"
-                       ++ ex ++ cmd)
-        where (j,ex) = vizs (i+1) t
-              (k,cmd) = vizl j u ";"
-    vizs i (IfElse t u v) = (l, show i ++ " [label=\"ifelse\"]\n"
-                             ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                             ++ show i ++ " -> " ++ show j ++ "\n"
-                             ++ show i ++ " -> " ++ show k ++ "\n"
-                             ++ ex ++ cmd1 ++ cmd2)
-        where (j,ex) = vizs (i+1) t
-              (k,cmd1) = vizl j u ";"
-              (l,cmd2) = vizl k v ";"
-    vizs i (For t u v w) = (l, show i ++ " [label=\"for " ++ t ++ "\"]\n"
-                            ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                            ++ show i ++ " -> " ++ show j ++ "\n"
-                            ++ show i ++ " -> " ++ show k ++ "\n"
-                            ++ ex1 ++ ex2 ++ cmd)
-        where (j,ex1) = vizs (i+1) u
-              (k,ex2) = vizs j v
-              (l,cmd) = vizl k w ";"
+
+    vizs i (Attrib t u) = let (j,lhs) = vizs (i+1) t
+                              (k,rhs) = vizs j u
+                           in (k, i `label` "Attrib"
+                               ++ i `arrow` (i+1)
+                               ++ i `arrow` j
+                               ++ lhs ++ rhs
+                               ++ order [i+1,j])
+
+    vizs i (Free t) = let (j,rhs) = vizs (i+1) t
+                       in (j, i `label` "free"
+                           ++ i `arrow` (i+1)
+                           ++ rhs)
+
+    vizs i (While t u) = let (j,ex) = vizs (i+1) t
+                             (k,cmd) = vizl j u ";"
+                          in (k, i `label` "while"
+                              ++ i `arrow` (i+1)
+                              ++ i `arrow` j
+                              ++ ex ++ cmd
+                              ++ order [i+1,j])
+
+    vizs i (If t u) = let (j,ex) = vizs (i+1) t
+                          (k,cmd) = vizl j u ";"
+                       in (k, i `label` ("if")
+                           ++ i `arrow` (i+1)
+                           ++ i `arrow` j
+                           ++ ex ++ cmd
+                           ++ order [i+1,j])
+
+    vizs i (IfElse t u v) = let (j,ex) = vizs (i+1) t
+                                (k,cmd1) = vizl j u ";"
+                                (l,cmd2) = vizl k v ";"
+                             in (l, i `label` "ifelse"
+                                 ++ i `arrow` (i+1)
+                                 ++ i `arrow` j
+                                 ++ i `arrow` k
+                                 ++ ex ++ cmd1 ++ cmd2
+                                 ++ order [i+1,j,k])
+
+    vizs i (For t u v w) = let (j,var) = vizs (i+1) t
+                               (k,ex1) = vizs j u
+                               (l,ex2) = vizs k v
+                               (m,cmd) = vizl l w ";"
+                            in (m, i `label` "for "
+                                ++ i `arrow` (i+1)
+                                ++ i `arrow` j
+                                ++ i `arrow` k
+                                ++ i `arrow` l
+                                ++ var ++ ex1 ++ ex2 ++ cmd
+                                ++ order [i+1,j,k,l])
 
 instance Viz VarDecl where
-    vizs i (VarDecl t u Nothing) = (i+2, show i ++ " [label=\"VarDecl " ++ u ++ "\"]\n"
-                                      ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                                      ++ show (i+1) ++ " [label=\"" ++ show t ++ "\"]\n")
-    vizs i (VarDecl t u (Just v)) = (j, show i ++ " [label=\"VarDecl " ++ u ++ "\"]\n"
-                                     ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                                     ++ show (i+1) ++ " [label=\"" ++ show t ++ "\"]\n"
-                                     ++ show i ++ " -> " ++ show (i+2) ++ "\n"
-                                    ++ ex)
-        where (j,ex) = vizs (i+2) v
+    vizs i (VarDecl t u Nothing) = (i+3, i `label` "VarDecl"
+                                      ++ (i+1) `label` (show t)
+                                      ++ (i+2) `label` u
+                                      ++ i `arrow` (i+1)
+                                      ++ i `arrow` (i+2)
+                                      ++ order [i+1,i+2])
+
+    vizs i (VarDecl t u (Just v)) = let (j,ex) = vizs (i+3) v
+                                     in (j, i `label` "VarDecl"
+                                     ++ (i+1) `label` (show t)
+                                     ++ (i+2) `label` u
+                                     ++ i `arrow` (i+1)
+                                     ++ i `arrow` (i+2)
+                                     ++ i `arrow` (i+3)
+                                     ++ ex
+                                     ++ order [i+1,i+2,i+3])
 
 instance Viz ParamDecl where
-    vizs i (ParamDecl t u) = (i+2, show i ++ " [label=\"VarDecl " ++ u ++ "\"]\n"
-                              ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                              ++ show (i+1) ++ " [label=\"" ++ show t ++ "\"]\n")
+    vizs i (ParamDecl t u) = (i+3, i `label` ("ParDecl")
+                                ++ (i+1) `label` (show t)
+                                ++ (i+2) `label` u
+                                ++ i `arrow` (i+1)
+                                ++ i `arrow` (i+2)
+                                ++ order [i+1,i+2])
 
 instance Viz Scope where
-    vizs i (Scope t u) = (k, show i ++ " [label=\"Scope\"]\n"
-                          ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                          ++ show i ++ " -> " ++ show j ++ "\n"
-                          ++ var ++ cmd)
-        where (j,var) = vizl (i+1) t ","
-              (k,cmd) = vizl j u ";"
+    vizs i (Scope t u) = let (j,var) = vizl (i+1) t ","
+                             (k,cmd) = vizl j u ";"
+                          in (k, i `label` "Scope"
+                              ++ i `arrow` (i+1)
+                              ++ i `arrow` j
+                              ++ var ++ cmd)
 
 instance Viz FuncDecl where
-    vizs i (FuncDecl t u v w) = (k, show i ++ " [label=\"FuncDecl " ++ u ++ "\"]\n"
-                                 ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                                 ++ show (i+1) ++ " [label=\"" ++ show t ++ "\"]\n"
-                                 ++ show i ++ " -> " ++ show (i+2) ++ "\n"
-                                 ++ show i ++ " -> " ++ show j ++ "\n"
-                                 ++ par ++ sco)
-        where (j,par) = vizl (i+2) v ","
-              (k,sco) = vizs j w
+    vizs i (FuncDecl t u v w) = let (j,par) = vizl (i+3) v ","
+                                    (k,sco) = vizs j w
+                                 in (k, i `label` "FuncDecl"
+                                     ++ (i+1) `label` (show t)
+                                     ++ (i+2) `label` u
+                                     ++ i `arrow` (i+1)
+                                     ++ i `arrow` (i+2)
+                                     ++ i `arrow` (i+3)
+                                     ++ i `arrow` j
+                                     ++ par ++ sco
+                                     ++ order [i+1,i+2,i+3,j])
 
 instance Viz Program where
-    vizs i (Program t u) = (k, show i ++ " [label=\"Program\"]\n"
-                          ++ show i ++ " -> " ++ show (i+1) ++ "\n"
-                          ++ show i ++ " -> " ++ show j ++ "\n"
-                          ++ fun ++ sco)
-        where (j,fun) = vizl (i+1) t ","
-              (k,sco) = vizs j u
+    vizs i (Program t u) = let (j,fun) = vizl (i+1) t ","
+                               (k,sco) = vizs j u
+                            in (k, i `label` "Program"
+                                ++ i `arrow` (i+1)
+                                ++ i `arrow` j
+                                ++ fun ++ sco)
+
