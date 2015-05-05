@@ -185,7 +185,8 @@ instance Viz Scope where
                           in (k, i `label` "Scope"
                               ++ i `arrow` (i+1)
                               ++ i `arrow` j
-                              ++ var ++ cmd)
+                              ++ var ++ cmd
+                              ++ order [i+1,j])
 
 instance Viz FuncDecl where
     vizs i (FuncDecl t u v w) = let (j,par) = vizl (i+3) v ","

@@ -25,7 +25,12 @@ stringlit :: Parser Expr
 stringlit = StringLit <$> between (char '"') (char '"') (many $ noneOf "\"\0\n")
 
 nameid :: Parser String
-nameid = (:) <$> (letter <|> char '_') <*> many (alphaNum <|> char '_')
+nameid = do s <- (:) <$> (letter <|> char '_') <*> many (alphaNum <|> char '_')
+            if s `elem` ["se","entao","senao","enquanto","novo",
+                         "free","itere","verdade","falso","Bool",
+                         "String","Int","vars","programa"]
+               then parserFail "cannot use reserved word as identifier"
+               else return s
 
 typeid :: Parser Typeid
 typeid = typevec <$> typename <* spaces
