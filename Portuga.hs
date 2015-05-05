@@ -5,7 +5,12 @@ import Viz
 import System.Environment
 import Text.Parsec.String
 
-parseFirst (x:_) = (parseFromFile portuga x) >>= (\(Right x)->return $ viz x) >>= writeFile (x ++ ".dot")
+parseFiles [] = return ()
+parseFiles (x:xs) = do parse <- parseFromFile portuga x
+                       case parse of
+                           Left err  -> print err
+                           Right ast -> do writeFile (x ++ ".dot") (viz ast)
+                                           parseFiles xs
 
-main = getArgs >>= parseFirst
+main = getArgs >>= parseFiles
 

@@ -26,7 +26,7 @@ vizls i (x:xs) p c = (l, show i ++ " [label=\""++ p ++"\"]\n"
 instance Viz Expr where
     vizs i (IntLit t) = (i+1, show i ++ " [label=\"Lit " ++ show t ++ "\"]\n")
     vizs i (BoolLit t) = (i+1,show i ++ " [label=\"Lit " ++ show t ++ "\"]\n")
-    vizs i (StringLit t) = (i+1,show i ++ " [label=\"Lit " ++ t ++ "\"]\n")
+    vizs i (StringLit t) = (i+1,show i ++ " [label=\"Lit \\\"" ++ t ++ "\\\"\"]\n")
     vizs i (Not t) = (j, show i ++ " [label=\"!\"]\n"
                       ++ show i ++ " -> " ++ show (i+1) ++ "\n"
                       ++ rhs)

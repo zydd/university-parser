@@ -50,7 +50,7 @@ lbinop ops unit = foldl (\e (a,b)->BinOp e a b) <$> unit
                                                 <*> unit)
 
 alloc :: Parser Expr
-alloc = Alloc <$> (try (word "new") *> whitespace *> typename <* spaces)
+alloc = Alloc <$> (try (word "novo") *> whitespace *> typename <* spaces)
               <*> many1 (between (char '[') (char ']' *> spaces) expr)
 
 var :: Parser Expr
