@@ -83,8 +83,7 @@ block = between (char '{') (char '}') (spaces *> many (command <* spaces))
 
 command :: Parser Command
 command = while
-      <|> try ifelse
-      <|> ifthen
+      <|> ifthenelse
       <|> for
       <|> free <* spaces <* char ';'
       <|> try attrib <* char ';'
@@ -95,16 +94,11 @@ while = While <$> (try (word "enquanto") *> spaces
                *> between (char '(') (char ')') expr <* spaces)
               <*> block
 
-ifelse :: Parser Command
-ifelse = IfElse <$> (try (word "se") *> spaces
+ifthenelse :: Parser Command
+ifthenelse = If <$> (try (word "se") *> spaces
                  *> between (char '(') (char ')') expr <* spaces)
                 <*> (word "entao" *> spaces *> block <* spaces)
-                <*> (word "senao" *> spaces *> block)
-
-ifthen :: Parser Command
-ifthen = If <$> (try (word "se") *> spaces
-             *> between (char '(') (char ')') expr <* spaces)
-            <*> (word "entao" *> spaces *> block)
+                <*> optionMaybe (try (word "senao" *> spaces *> block))
 
 attrib :: Parser Command
 attrib = Attrib <$> (var <* spaces <* string "<-") <*> expr

@@ -8,17 +8,16 @@ data Typeid     = Int
                 | Vector     Typeid
    deriving Read
 
-data Program    = Program   [FuncDecl] Scope                        deriving Show
-data Scope      = Scope     [VarDecl] [Command]                     deriving Show
+data Program    = Program   [FuncDecl] Scope                              deriving Show
+data Scope      = Scope     [VarDecl] [Command]                           deriving Show
 
-data FuncDecl   = FuncDecl   Typeid    Nameid   [ParamDecl] Scope   deriving Show
-data ParamDecl  = ParamDecl  Typeid    Nameid                       deriving Show
-data VarDecl    = VarDecl    Typeid    Nameid   (Maybe Expr)        deriving Show
+data FuncDecl   = FuncDecl   Typeid    Nameid   [ParamDecl]       Scope   deriving Show
+data ParamDecl  = ParamDecl  Typeid    Nameid                             deriving Show
+data VarDecl    = VarDecl    Typeid    Nameid   (Maybe Expr)              deriving Show
 
 data Command    = While      Expr     [Command]
-                | If         Expr     [Command]
-                | IfElse     Expr     [Command] [Command]
-                | For        Expr      Expr      Expr      [Command]
+                | If         Expr     [Command] (Maybe [Command])
+                | For        Expr      Expr      Expr            [Command]
                 | Free       Expr
                 | Attrib     Expr      Expr
                 | Expr       Expr

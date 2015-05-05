@@ -51,7 +51,8 @@ instance Viz Expr where
                            in (k, i `label` (o)
                                ++ i `arrow` (i+1)
                                ++ i `arrow` j
-                               ++ lhs ++ rhs)
+                               ++ lhs ++ rhs
+                               ++ order [i+1,j])
 
     vizs i (Var t []) = (i+2,i `label` "Var"
                           ++ (i+1) `label` t
@@ -85,7 +86,8 @@ instance Viz Expr where
                            ++ (i+1) `label` (show t)
                            ++ i `arrow` (i+1)
                            ++ i `arrow` (i+2)
-                           ++ idx)
+                           ++ idx
+                           ++ order [i+1,i+2])
 
     vizs i (Tern t u v) = let (j,ex1) = vizs (i+1) t
                               (k,ex2) = vizs j u
@@ -121,23 +123,23 @@ instance Viz Command where
                               ++ ex ++ cmd
                               ++ order [i+1,j])
 
-    vizs i (If t u) = let (j,ex) = vizs (i+1) t
-                          (k,cmd) = vizl j u ";"
-                       in (k, i `label` ("if")
-                           ++ i `arrow` (i+1)
-                           ++ i `arrow` j
-                           ++ ex ++ cmd
-                           ++ order [i+1,j])
+    vizs i (If t u Nothing) = let (j,ex) = vizs (i+1) t
+                                  (k,cmd) = vizl j u ";"
+                              in (k, i `label` ("if")
+                                  ++ i `arrow` (i+1)
+                                  ++ i `arrow` j
+                                  ++ ex ++ cmd
+                                  ++ order [i+1,j])
 
-    vizs i (IfElse t u v) = let (j,ex) = vizs (i+1) t
-                                (k,cmd1) = vizl j u ";"
-                                (l,cmd2) = vizl k v ";"
-                             in (l, i `label` "ifelse"
-                                 ++ i `arrow` (i+1)
-                                 ++ i `arrow` j
-                                 ++ i `arrow` k
-                                 ++ ex ++ cmd1 ++ cmd2
-                                 ++ order [i+1,j,k])
+    vizs i (If t u (Just v)) = let (j,ex) = vizs (i+1) t
+                                   (k,cmd1) = vizl j u ";"
+                                   (l,cmd2) = vizl k v ";"
+                                in (l, i `label` "ifelse"
+                                    ++ i `arrow` (i+1)
+                                    ++ i `arrow` j
+                                    ++ i `arrow` k
+                                    ++ ex ++ cmd1 ++ cmd2
+                                    ++ order [i+1,j,k])
 
     vizs i (For t u v w) = let (j,var) = vizs (i+1) t
                                (k,ex1) = vizs j u
