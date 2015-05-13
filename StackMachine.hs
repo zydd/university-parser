@@ -1,10 +1,11 @@
-module StackMachine (exec) where
+module StackMachine where
 
 import qualified Data.Map.Strict as Map
 
 data Data = Int Int | String String | Bool Bool | Var String
     deriving Show
 data Instruction = Push Data | Add | Sub | Mult | Div | Attr
+    deriving Show
 
 type Stack = [Data]
 type Program = [Instruction]
