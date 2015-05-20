@@ -30,7 +30,7 @@ instance Stackable Scope where
 instance Stackable Command where
     compile (Expr e) = compile e -- ++ [S.Pop]
     compile (Attrib v e) = compile v ++ compile e ++ [S.Attr]
-    compile (If e cs Nothing) = [S.Push $ S.Block $ concat $ map compile cs] ++ compile e ++ [S.If]
-    compile (While e cs) = [S.Push (S.Block $ concat (map compile cs) ++ cond)] ++ cond ++ [S.While]
+    compile (If e cs Nothing) = [S.Push $ S.Block $ compile cs] ++ compile e ++ [S.If]
+    compile (While e cs) = [S.Push (S.Block $ compile cs ++ cond)] ++ cond ++ [S.While]
         where cond = compile e
 

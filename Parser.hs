@@ -86,8 +86,8 @@ term = try tern
    <|> var
    <?> "expression"
 
-block :: Parser [Command]
-block = between (char '{') (char '}') (spaces *> many (command <* spaces))
+block :: Parser Scope
+block = Scope [] <$> between (char '{') (char '}') (spaces *> many (command <* spaces))
 
 command :: Parser Command
 command = while
@@ -100,13 +100,13 @@ command = while
 while :: Parser Command
 while = While <$> (try (word "enquanto") *> spaces
                *> between (char '(') (char ')') expr <* spaces)
-              <*> block
+              <*> scope
 
 ifthenelse :: Parser Command
 ifthenelse = If <$> (try (word "se") *> spaces
                  *> between (char '(') (char ')') expr <* spaces)
-                <*> (word "entao" *> spaces *> block <* spaces)
-                <*> optionMaybe (try (word "senao" *> spaces *> block))
+                <*> (word "entao" *> spaces *> scope <* spaces)
+                <*> optionMaybe (try (word "senao" *> spaces *> scope))
 
 attrib :: Parser Command
 attrib = Attrib <$> (var <* spaces <* string "<-") <*> expr
@@ -119,7 +119,7 @@ for =  For <$> (try (word "itere") *> spaces
             *> char '(' *> spaces *> (var <* spaces <* char ':' <* spaces) <* spaces)
            <*> (expr <* string ".." <* spaces)
            <*> (expr <* char ')' <* spaces)
-           <*> block
+           <*> scope
 
 vardecl :: Parser VarDecl
 vardecl = VarDecl <$> typeid <* spaces <*> nameid <* spaces

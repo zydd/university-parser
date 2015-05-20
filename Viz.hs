@@ -115,43 +115,44 @@ instance Viz Command where
                            ++ i --> (i+1)
                            ++ rhs)
 
-    vizs i (While t u) = let (j,ex) = vizs (i+1) t
-                             (k,cmd) = vizl j u ";"
-                          in (k, i `label` "while"
-                              ++ i --> (i+1)
-                              ++ i --> j
-                              ++ ex ++ cmd
-                              ++ order [i+1,j])
+    vizs i (While t (Scope _ u)) = let (j,ex) = vizs (i+1) t
+                                       (k,cmd) = vizl j u ";"
+                                   in (k, i `label` "while"
+                                       ++ i --> (i+1)
+                                       ++ i --> j
+                                       ++ ex ++ cmd
+                                       ++ order [i+1,j])
 
-    vizs i (If t u Nothing) = let (j,ex) = vizs (i+1) t
-                                  (k,cmd) = vizl j u ";"
+    vizs i (If t (Scope _ u) Nothing) = let (j,ex) = vizs (i+1) t
+                                            (k,cmd) = vizl j u ";"
                               in (k, i `label` ("if")
                                   ++ i --> (i+1)
                                   ++ i --> j
                                   ++ ex ++ cmd
                                   ++ order [i+1,j])
 
-    vizs i (If t u (Just v)) = let (j,ex) = vizs (i+1) t
-                                   (k,cmd1) = vizl j u ";"
-                                   (l,cmd2) = vizl k v ";"
-                                in (l, i `label` "ifelse"
-                                    ++ i --> (i+1)
-                                    ++ i --> j
-                                    ++ i --> k
-                                    ++ ex ++ cmd1 ++ cmd2
-                                    ++ order [i+1,j,k])
+    vizs i (If t (Scope _ u) (Just (Scope _ v))) =
+        let (j,ex) = vizs (i+1) t
+            (k,cmd1) = vizl j u ";"
+            (l,cmd2) = vizl k v ";"
+        in (l, i `label` "ifelse"
+            ++ i --> (i+1)
+            ++ i --> j
+            ++ i --> k
+            ++ ex ++ cmd1 ++ cmd2
+            ++ order [i+1,j,k])
 
-    vizs i (For t u v w) = let (j,var) = vizs (i+1) t
-                               (k,ex1) = vizs j u
-                               (l,ex2) = vizs k v
-                               (m,cmd) = vizl l w ";"
-                            in (m, i `label` "for "
-                                ++ i --> (i+1)
-                                ++ i --> j
-                                ++ i --> k
-                                ++ i --> l
-                                ++ var ++ ex1 ++ ex2 ++ cmd
-                                ++ order [i+1,j,k,l])
+    vizs i (For t u v (Scope _ w)) = let (j,var) = vizs (i+1) t
+                                         (k,ex1) = vizs j u
+                                         (l,ex2) = vizs k v
+                                         (m,cmd) = vizl l w ";"
+                                      in (m, i `label` "for "
+                                          ++ i --> (i+1)
+                                          ++ i --> j
+                                          ++ i --> k
+                                          ++ i --> l
+                                          ++ var ++ ex1 ++ ex2 ++ cmd
+                                          ++ order [i+1,j,k,l])
 
 instance Viz VarDecl where
     vizs i (VarDecl t u Nothing) = (i+3, i `label` "VarDecl"

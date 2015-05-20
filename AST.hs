@@ -6,7 +6,7 @@ data Typeid     = Int
                 | Bool
                 | String
                 | Vector     Typeid
-   deriving Read
+   deriving (Read, Eq)
 
 data Program    = Program   [FuncDecl] Scope                              deriving Show
 data Scope      = Scope     [VarDecl] [Command]                           deriving Show
@@ -15,9 +15,9 @@ data FuncDecl   = FuncDecl   Typeid    Nameid   [ParamDecl]       Scope   derivi
 data ParamDecl  = ParamDecl  Typeid    Nameid                             deriving Show
 data VarDecl    = VarDecl    Typeid    Nameid   (Maybe Expr)              deriving Show
 
-data Command    = While      Expr     [Command]
-                | If         Expr     [Command] (Maybe [Command])
-                | For        Expr      Expr      Expr            [Command]
+data Command    = While      Expr      Scope
+                | If         Expr      Scope (Maybe Scope)
+                | For        Expr      Expr      Expr             Scope
                 | Free       Expr
                 | Attrib     Expr      Expr
                 | Expr       Expr

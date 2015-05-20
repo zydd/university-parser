@@ -3,9 +3,9 @@ module StackMachine where
 import qualified Data.Map.Strict as Map
 
 data Data = Int Int | String String | Bool Bool | Var String | Block [Instruction]
-    deriving Show
+    deriving (Show,Eq)
 data Instruction = Push Data | Add | Sub | Mult | Div | Attr | Not | Lt | Gt | Eq | If | While
-    deriving Show
+    deriving (Show,Eq)
 
 type Stack = [Data]
 type Program = [Instruction]
@@ -23,9 +23,12 @@ instance Num Data where
 (Int x) |>| (Int y) = Bool (x > y)
 (Int x) |<| (Int y) = Bool (x < y)
 (Int x) |==| (Int y) = Bool (x == y)
+(Bool x) |==| (Bool y) = Bool (x == y)
 
 deref :: Memory -> Data -> Data
-deref mem (Var x) = case Map.lookup x mem of Just x -> x
+deref mem (Var x) = case Map.lookup x mem of
+                         Just x -> x
+                         Nothing -> error $ "undefined: " ++ x
 deref _ x = x
 
 exec :: (Stack,Memory) -> Program -> (Stack,Memory)
@@ -44,11 +47,13 @@ exec (Bool x : st, mem) (Not : ins) = exec (Bool (not x) : st, mem) ins
 
 exec (y : Var x : st, mem) (Attr : ins) = exec (st, Map.insert x y mem) ins
 
-exec (Bool True  : Block blk : st, mem) (If : ins) = exec (exec (st,mem) blk) ins
-exec (Bool False : Block blk : st, mem) (If : ins) = exec (st,mem) ins
+exec (x : Block blk : st, mem) (If : ins) | deref mem x == Bool True =  exec (exec (st,mem) blk) ins
+                                          | otherwise = exec (st,mem) ins
 
 exec (Bool True  : Block blk : st, mem) (While : ins) = exec (exec (Block blk : st,mem) blk) (While : ins)
 exec (Bool False : Block blk : st, mem) (While : ins) = exec (st,mem) ins
+
+exec (x : y : _, mem) (cmd : _) = error $ show x ++ ':' : show y ++ ' ' : show cmd
 
 exec sm [] = sm
 
