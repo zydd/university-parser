@@ -65,9 +65,14 @@ instance Typed Command where
                          Just (t,_) -> Right t
 
     analyses (If cond scope Nothing) sc = case (==Bool) <$> typeof cond sc of
-                                                 Left x -> Left x
-                                                 Right False -> Left "Non boolean expression in if statement"
-                                                 Right True -> analyses scope sc
+                                               Left x -> Left x
+                                               Right False -> Left "Non boolean expression in if statement"
+                                               Right True -> analyses scope sc
+
+    analyses (While cond scope) sc = case (==Bool) <$> typeof cond sc of
+                                          Left x -> Left x
+                                          Right False -> Left "Non boolean expression in while statement"
+                                          Right True -> analyses scope sc
 
 typeof :: Expr -> VarScope -> Either String Typeid
 typeof (IntLit _) sc = Right Int
